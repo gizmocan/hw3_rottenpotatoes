@@ -2,8 +2,7 @@
 
 Given /the following movies exist/ do |movies_table|
   movies_table.hashes.each do |movie|
-    Movie.create!(:title => movie["title"], :rating => movie["rating"], :release_date => movie["release_date"])
-    #@test_db.create!(:title => movie["title"], :rating => movie["rating"], :release_date => movie["release_date"])
+    Movie.create!(movie)
   end
 end
 
@@ -11,8 +10,8 @@ end
 #   on the same page
 
 Then /I should see "(.*)" before "(.*)"/ do |e1, e2|
-  #  ensure that that e1 occurs before e2.
   #  page.body is the entire content of the page as a string.
+  /e1[\w\W]*e2/.match(page.body)
 end
 
 # Make it easier to express checking or unchecking several boxes at once
@@ -20,7 +19,39 @@ end
 #  "When I check the following ratings: G"
 
 When /I (un)?check the following ratings: (.*)/ do |uncheck, rating_list|
-  # HINT: use String#split to split up the rating_list, then
-  #   iterate over the ratings and reuse the "When I check..." or
-  #   "When I uncheck..." steps in lines 89-95 of web_steps.rb
+  rating_array = rating_list.split(',')
+  rating_array.each do |rating|
+    rating.strip!
+    if uncheck
+      uncheck("ratings_#{rating}")
+    else
+      check("ratings_#{rating}")
+    end
+  end
 end
+
+Then /I should see all of the movies/ do
+  db_rows = Movie.count('title')
+  db_rows.should == page.all("table tr").count - 1 # Don't count table header row
+end
+
+Then /I should not see any movies/ do
+  0.should == page.all("table tr").count - 1 # Don't count table header row
+end
+
+Then /I should( not)? see movies with the following ratings: (.*)/ do |not_shown, rating_list|
+  rating_array = rating_list.split(',')
+  rating_array.each do |rating|
+    rating.strip!
+    title_list = Movie.where(:rating => rating).map(&:title)
+    title_list.each do |title|
+      if not_shown
+        !page.has_content?(title)
+      else 
+        page.has_content?(title)
+      end
+    end
+  end
+end
+
+
