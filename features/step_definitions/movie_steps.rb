@@ -11,7 +11,7 @@ end
 
 Then /I should see "(.*)" before "(.*)"/ do |e1, e2|
   #  page.body is the entire content of the page as a string.
-  /e1[\w\W]*e2/.match(page.body)
+  /#{e1}[\w\W]*#{e2}/.should match(page.body)
 end
 
 # Make it easier to express checking or unchecking several boxes at once
@@ -45,10 +45,10 @@ Then /I should( not)? see movies with the following ratings: (.*)/ do |not_shown
     rating.strip!
     title_list = Movie.where(:rating => rating).map(&:title)
     title_list.each do |title|
-      if not_shown
-        !page.has_content?(title)
+      if not_shown == " not"
+        page.body.should_not include(title)
       else 
-        page.has_content?(title)
+        page.body.should include(title)
       end
     end
   end
